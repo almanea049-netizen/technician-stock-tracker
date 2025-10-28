@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Stock Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS for a Clean, Modern, Mobile-First UI */
+        :root {
+            --primary-color: #3b82f6; /* Blue for primary actions/accents */
+            --secondary-color: #6b7280; /* Gray for subtle text */
+            --success-color: #10b981; /* Green for key metric/success */
+            --background-color: #f3f4f6; /* Light gray background */
+            --card-background: #ffffff;
+            --text-color: #1f2937;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --border-radius-lg: 12px;
+            --border-radius-sm: 6px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 15px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+
+        .controls {
+            background-color: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            width: 100%;
+        }
+
+        .controls label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .controls select, .controls button {
+            padding: 12px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .controls select {
+            background-color: #fff;
+            appearance: none; /* Hide default arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 1.2em;
+        }
+
+        .controls button {
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #filterLocationBtn {
+            background-color: var(--primary-color);
+            color: white;
+            margin-top: 5px;
+        }
+
+        #filterLocationBtn:active {
+            transform: scale(0.99);
+        }
+        
+        #exportPdfBtn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        #exportPdfBtn:active {
+            transform: scale(0.99);
+        }
+
+        #technicianInfo {
+            background-color: #e5e7eb;
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 15px;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        /* Stock List Styling (Mobile Cards) */
+        #stockList {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .stock-card {
+            background-color: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            border-left: 6px solid var(--primary-color);
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .card-item-number, .card-location-info {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 12px;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns for 3 inventory numbers */
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-item strong {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            margin-bottom: 3px;
+        }
+
+        .detail-item span {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /* Highlight for Total Available */
+        .detail-item.total span {
+            color: var(--success-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-color);
+            border: 2px dashed #ccc;
+            border-radius: var(--border-radius-lg);
+            font-size: 1rem;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Technician Stock Tracker 🚚</h1>
+    </header>
+
+    <main>
+        <div class="controls">
+            <div class="input-group">
+                <label for="locationFilter">Select Location Code:</label>
+                <select id="locationFilter">
+                    <option value="">-- Show All Stock --</option>
+                    </select>
+                <div id="technicianInfo">Select a Location to see the Technician</div>
+            </div>
+            <button id="filterLocationBtn">Filter Stock</button>
+            <button id="exportPdfBtn">Export to PDF 📄</button>
+        </div>
+
+        <div id="stockList">
+            </div>
+    </main>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        // 1. Stock Data 
+        const rawStockData = [
+            { "Item number": "120100102211013", "Product name": "ثلاجة هام بابين أبيض 11 قدم HM340WRF-O23DF", "Warehouse": "Z11049", "Location": "Z11049", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120100102214005", "Product name": "ثلاجة هام بابين أبيض 14.9 قدم HM580WRF-O23", "Warehouse": "Z11049", "Location": "01763", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120100102216015", "Product name": "ثلاجة هام بابين استيل 16.9 قدم انفرتر HM640SRF-O23 INV", "Warehouse": "Z11049", "Location": "07547", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120300102108004", "Product name": "غسالة هام تعبئة أمامية 8 كيلو أبيض HMFL80W-21N", "Warehouse": "Z11049", "Location": "01763", "Physical inventory": 2.00, "Available physical": 2.00, "Total available": 2.00 },
+            { "Item number": "120300102110004", "Product name": "غسالة هام أمامية 10.5 كيلو Inverter أبيض بخار HMFL10WHINV25", "Warehouse": "Z11049", "Location": "02245", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120300104105006", "Product name": "غساله هام حوضين 5 كيلو أبيض HWM5000-24N", "Warehouse": "Z11049", "Location": "02220", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120300104106006", "Product name": "غساله هام حوضين 6 كيلو أبيض HWM6000-21N", "Warehouse": "Z11049", "Location": "02299", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120400101108003", "Product name": "نشاف هام تعبئة أمامية 8 كيلو مكثف HDR80NS-23N", "Warehouse": "Z11049", "Location": "07735", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120400101110002", "Product name": "نشاف هام 10 كيلو Inverter أبيض Heat Pump مكثف HMDR10WHINV25", "Warehouse": "Z11049", "Location": "08329", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120600101879002", "Product name": "فرن هام 5 عيون غاز 55*80 استيل أمان كامل HM80GF-20", "Warehouse": "Z11049", "Location": "08327", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "120611201883001", "Product name": "فرن فيلكو استيل 60*90 غاز امان كامل PNGJ30JGWS", "Warehouse": "Z11049", "Location": "08328", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "139900199450010", "Product name": "شاشة هام 50 بوصة أندرويد سمارت HM4K50S11TND -UHD-4K", "Warehouse": "Z11049", "Location": "Z11049", "Physical inventory": 0.00, "Available physical": 0.00, "Total available": 1.00 },
+            { "Item number": "139900399450009", "Product name": "شاشة 50MTC بوصة سمارت LED MTC4K50S21-UHD-4K", "Warehouse": "Z11049", "Location": "Z11177", "Physical inventory": 1.00, "Available physical": 1.00, "Total available": 1.00 },
+            { "Item number": "139900399450012", "Product name": "شاشة 50MTC بوصة Webos سمارت MTC4KD50SWOS-UHD-4K", "Warehouse": "Z11049", "Location": "08692", "Physical inventory": 0.00, "Available physical": 0.00, "Total available": 1.00 },
+            { "Item number": "139900399455012", "Product name": "شاشة 55MTC بوصة Webos ماجيك ريموت سمارت MTC4KD55SWOS-UHD-4K", "Warehouse": "Z11049", "Location": "04028", "Physical inventory": 0.00, "Available physical": 0.00, "Total available": 1.00 }
+        ];
+
+        // 2. Employee Lookup Data (Technician Data)
+        const employeeCodeMap = {
+            "00019": "Sadiq ali ansari", "00022": "Mohammed Sheesh", "00055": "Abonasser Shafieullah", 
+            "00057": "Obaid Alhaq Jamal", "00064": "Nizam Abulkhair", "00066": "Siraj Alhaqi Shafiealla", 
+            "00107": "Mohammed Salem", "00378": "Bir Bahadur", "00454": "Eddy Ordanza Oniza", 
+            "00472": "Mohammed Arshad Ansari", "00626": "Shibu Babu Rimani", "00631": "Mohammed Suhail Hassan", 
+            "00684": "Siraj Rajan", "00755": "Qamar Alim muhammad", "00776": "Shams Junaid Khan", 
+            "00781": "Mohammed Hassan Hassanein", "00789": "Mohammed Muslim", "00799": "Yousef ali Farhad", 
+            "00809": "Ansar Niab Khan", "00826": "Azim Ullah rahmat allah", "00832": "Amit Verma", 
+            "00975": "Shamshad Ali amanat", "01349": "Alsayed Yasser Alsayed", "01363": "Sarfaraz nasir", 
+            "01367": "Gauhar Ali afdal", "01368": "Ismail Khan Ibrahim", "01386": "Badr Nasser Almasoud", 
+            "01711": "Ibrahim Zadeh Khan", "01763": "Inam khan ahsan", "01804": "Sajid Ali Asghar", 
+            "01805": "shadab rahim ali", "01866": "Leovi Bultron Almario", "01946": "Tabrij Ahmed Rowary", 
+            "01964": "Aladin Bagozo Nara", "02060": "Aboalizid Abdul Razek Mohammed", "02098": "Kedar Bhadur Khatri", 
+            "02115": "Wajahul Qamar", "02145": "Mohammed saif abdulrahman", "02147": "Intizar Ali khan", 
+            "02158": "Muhamad eaziz muhamad", "02219": "Amanpreet Singh Sondir", "02220": "Harginder Sang Satnam", 
+            "02221": "Mohd Shahid", "02223": "Umar Ali Abdul Jabbar", "02224": "Faris Ali Jahid", 
+            "02225": "Mohammad Quddos", "02226": "DiaaHaq Shaaban Ali", "02229": "Ershad Sahzan Ahmed", 
+            "02231": "Sone Lal Patel", "02244": "Mohamed Zafer Ansari", "02245": "Mohamed Shahid Mohamed", 
+            "02246": "Jishan Mokhtar Ahmed", "02248": "Mohammed Khaled Ansari", "02249": "Bal Kishon Rama", 
+            "02296": "Ajad fasil ahmad", "02299": "Mohamed Javed Safi", "02300": "Ram Sanihi Lahabar", 
+            "02332": "Saddam Sheikh WahabAllah", "02338": "Samiullah Hussein", "02809": "Junaid Alam", 
+            "02812": "Mohd Shadik", "02814": "Mohamed Noman Mohamed Othman", "02820": "Sekh Suman Suman", 
+            "02821": "PAL NEERAJ RAJENSRAPRASAD", "02822": "SHEIKH ARISH SHAFI", "02823": "MONDAL TUHIN", 
+            "02824": "Mohammad Mufeej", "02837": "Rampukar Yadav Lalchand Yadav", "02881": "Mehtab Afroz", 
+            "02918": "Sheikh Reis Naim Allah", "02944": "Sachin Patel Enochil", "02989": "eimad sibshi abd almohasen", 
+            "03016": "Radwan", "03167": "Mai Mubarak", "03361": "Hussien Aldosari", "03425": "Faris Ali Ahmed Atif", 
+            "03495": "Faisal Hassan Al-Qahtani", "03505": "Fahd Mohammed Atif", "03559": "MARLO SANCHEZ CAUSAPIN", 
+            "03561": "Jemboy Sahagon Blanco", "03614": "D Othman Ali", "03616": "Mousa Abdallah Mousa", 
+            "03617": "Arzo Mia", "03618": "Shawoon Ahmed", "03664": "Sanjay Kumar Rai", 
+            "03715": "Abeer Abdullah Fahad Al-Hamoud", "03723": "MUJASSIM AHMAD", "03724": "Mohammad Sujon Saidur Rahman", 
+            "03740": "Padam Bahadur Rai", "03741": "Hari Kishun Yadav", "03769": "Ziad Fayez Dhafer Al-Shehri", 
+            "03808": "MOHAMMAD SAKIB", "03841": "Nazim Ghufran Ghufran Ahmed [No Incentive]", 
+            "03850": "Abdulaziz Yusuf Khalifa Al-Sunaikh", "03851": "Hamouda Abdullah Musa", "03854": "Md Yusef", 
+            "03856": "Muhammad Awad Ahmed Al-Asmari", "03868": "Ahmed Mustafa Farouk Abdel Alim", 
+            "03869": "Asim Anwar Abdul Sattar", "03879": "Hassan Kuber Ferror Ahmed", 
+            "03885": "Hussain Farhan Hussain Muhammed", "03900": "Eslam Mahmoud", "03911": "Mohammed Imran", 
+            "03918": "MOHSIN LEDU", "03926": "Abdul Hadi Ali bin Hamza Al-Juaidan", "03949": "Md sultan Islam", 
+            "03953": "Wajid Mahmoud Mohamed", "03984": "Rubel Islam", "04009": "Mohammad Ahmed Mohammad Ibrahim", 
+            "04028": "Rashed Nizam", "04030": "MD BIPLOB HOSSAIN", "06034": "Vinay Kumar", 
+            "06035": "Dilshad mohammad zakir", "06036": "Shaikh Saddam badruddin", "06063": "Kalim Rain", 
+            "06083": "Mohammed Marzouk Abdullah Al-Harbi", "06101": "Khurshid Alam", "06102": "Shaheed Wajeeh Allah", 
+            "06103": "Raymarc Maganoi", "06104": "FELIX ULAYON JOLONGBAYAN", "06105": "Cyrus Gonzaga", 
+            "06113": "Mahmoud Zein El-Sayed Shalaby", "06114": "Hassan Abdel Hamid Zaki Morsi", 
+            "06120": "Renante Lorva", "06121": "Jephson Balquiva", "06122": "Jerome Zamore", "06126": "Roden Race", 
+            "06150": "Abed Ali Ansari", "06152": "Amer Abdullah Mohammed Al-Otaibi", "06173": "Amr Eid Khalaf Arafat", 
+            "06211": "Ahmed Abdulhadi Salman Al-Marzouq", "06275": "Ibrahim Ahmad Ibrahim", "06287": "Ahmed Fahmy", 
+            "06323": "Shaikh Sameer Nura", "06324": "Amir Sohail Ansari", "06325": "Mohammad Iqbal Idrisi", 
+            "06326": "Shaikh Athar Anwar", "06346": "Turkey Al-harbi", "06347": "Mohammad Essa alzahrani", 
+            "06363": "Abdulrahman Alhazza", "06426": "Raed Ibrahim", "06489": "Sartaj Mohammad", "06504": "Amar Mondal", 
+            "06507": "Hassan Abdu Elazeim", "06674": "Mohamed AbdElhasib", "06711": "Mohammad Nabil", 
+            "06712": "Mohammad Arif", "06874": "Mohamed Ehsan", "06923": "Mohamed Shafeq", "06944": "Mahmoud Mohamed Atya", 
+            "06987": "Amjad Ali", "06998": "Islam Ashraf", "07014": "Al-Gabalwi", 
+            "07039": "MUHAMMAD YASEEN - - SAHAR GUL", "07040": "BABAR ALI AHSAN MUHAMMAD", 
+            "07041": "MUHAMMAD ARSLAN ABDUL RASHEED", "07042": "ABDUL GHAFOOR GHULAM RASOOL", 
+            "07043": "MUHAMMAD SAJID ALI NAIK AHMAD", "07297": "Ziaul Rahman", "07319": "Waqar Ahmad", 
+            "07320": "Shahzad Iqbal", "07321": "Asad Noor Nabil", "07322": "Mohammad Shahzad", "07323": "Umar Daraz", 
+            "07337": "Khaled Muhammad Abdelaty", "07338": "Sameh Ismail Mohamed", "07357": "Muflih Mohammad", 
+            "07365": "Mustafa Mohamed", "07366": "Reda Mohamed", "07367": "Ahmed Onsi Zakaria", 
+            "07368": "Shawki Ali Ibrahim", "07370": "Ahmed Refaat", "07385": "Al-Hanouf AlMuhayya", 
+            "07413": "Abdul Hamid", "07436": "Karana Prince", "07437": "Muhammad Kaif", "07438": "Khan Imran", 
+            "07511": "Moustafa Kamal", "07512": "Ahmed Ibrahim", "07513": "Magdy Maher Kamal", 
+            "07514": "Alaa AbdulHafiz", "07515": "Mohamed Ahmed", "07517": "Ahmed Abdelsalam", "07526": "Mohammad Fawzy", 
+            "07530": "Hossam Mohamed Abdelhamid", "07546": "Othman Shehata", "07547": "Ehaab Ibrahim Al-sayed", 
+            "07548": "Ahmed Muhammad Dandarawy", "07550": "Fahad Musfer Hamad Algahtani", "07589": "Mohammed Gamal", 
+            "07608": "Mohamed Nasser Fathi", "07609": "Islam Shaaban", "07610": "Ahmed Mostafa Mohamed", 
+            "07611": "Mohamed Eid Mahmoud", "07612": "Mohamed Salama Mohamed", "07671": "Chayan Roy", 
+            "07727": "Mohamed Abdelfattah", "07728": "Ahmed Fawzi Abdalla", "07729": "Ayman Mohamed Elsayed", 
+            "07730": "Abdelkarim Mohamed Eid", "07731": "Alaa Ahmed Abdelfattah", "07733": "Muhammad Ahmed Abdel Sattar", 
+            "07734": "Mohamed Khalifa Abdelazim", "07735": "Ahmed Youssef Ahmed", "07736": "Ahmed Ebrahim Hamed", 
+            "07749": "Tawfiq Ahmed Laghbi", "07750": "Saad Walid Alhamod", "07789": "Muhammad Arslan", 
+            "07792": "Mohammd Atique", "07846": "Ajaz Ahmad Samiullah", "07895": "Saud Obaid Farhan", 
+            "07899": "Jaber Miteb Jabir", "07961": "Parvej Mahafuj Ameena", "07974": "Javed Mahabub", 
+            "07975": "Mohammad Ashraf", "07976": "Muhammad Shahbaz", "07986": "Faheem Julfekar Naseema", 
+            "07987": "Atif Ullah Muhammad", "07988": "Nahid Naseem", "07995": "Neyyala Bhaskararao", 
+            "07996": "Mohammad Sajid", "08000": "Aman Khan Pathan", "08022": "Arif Nazar Nazar", 
+            "08029": "Salman Khan Salim Kham", "08031": "Mohd Ashvad", "08089": "Athif Adil Mohammad Hasania", 
+            "08090": "Zaki Ahmad", "08091": "Syed Shakeel", "08154": "Mohammad Khairy", "08139": "Yahya Ali Ahmed Madhli", 
+            "08330": "Adnan Khan", "08327": "Mohd Tabish Ali", "08328": "Arman Ali", "08335": "Mohammad Anas", 
+            "08334": "Faisal", "08325": "Sahil Shahid Hasan", "08332": "Vasid Ali", "08333": "Mohammad Atif", 
+            "08324": "Daud Ali", "08326": "Shahbaj Alam", "08329": "Junaid Alam", "08331": "Mateen Pathan", 
+            "08345": "Shahbaj Alam", "08347": "Mohammad Sharukh", "08346": "Mohammad Ali Raza", "08386": "Rayan Majed", 
+            "08393": "Adil Mohd", "08400": "Aadil Ahmed", "08397": "Mohammad Faizi", "08398": "Monu Mehtab", 
+            "08408": "Ibrahim", "08410": "Mana Salem", "08409": "Jarallah Mohammad", "08417": "Adil Saleh", 
+            "08446": "Ahmad Mohammed", "08448": "Mohammad Ali", "08424": "Faizan Sajjad", 
+            "08450": "Ismail Mohammad Ismail", "08449": "Abdulrahman Mahmoud Abdulrahman Al-Zanati", 
+            "08445": "Islam Muhammad Muhammad Ibrahim Juwaili", "08451": "Mohammad Asim Zar Khan", "08466": "Shoeb Shakeel", 
+            "08476": "Yahaya Payyadi", "08468": "Salim Khan", "08469": "Aflah Abdul", "08475": "Riyaz Ahmad", 
+            "08470": "Rihan Khan", "08474": "Hussain Kunju", "08484": "Abdulaziz Nasser Ibrahim Dawood", 
+            "08518": "Abdullah Samir Abdullah Hariri", "08533": "Mohammad Abdel Hamid", "08531": "Ahmad Mohammad Abdo", 
+            "08534": "Ahmad Al Saeed Ahmad Suleiman", "08532": "Ali Refaat Ali Abu Khair", "08530": "Mahmoud Mohammad Fayez", 
+            "08539": "Mohammad Ali Abdel Qadir", "08541": "Hamdi Mohammad Abd Al-Nabi Al Maliji", 
+            "08544": "Hossam Ahmad hegazy Al Zaali", "08547": "Ahmad Yahya Mohammad Ibrahim", "03455": "Yazi Khalifa", 
+            "08618": "Mohmmad Ahmed Khalil", "08624": "Shuaib Khan", "08674": "Mohammed Talib Faleh Al-Dosari", 
+            "08677": "Anwar Ahmed Yahya Al-Kaabi", "08692": "Ahmed Hamdy Elseddik", "08403": "Asim Hasnain Saeed Hasan", 
+            "08698": "Faisal Mohammed Abdul Mohsen Al-Anzi", "08699": "Faisal Muhammad al-Salik al-Shanqiti", 
+            "08700": "Yazid Abdullah Nasser Al-Asfour", "08702": "Abdulrahman Fahd Nawi Al-Ruwaili", 
+            "08703": "Osama Mohammed Awadah Al-Shahri", "08708": "Imad Ahmed Nasher Al-Mutairi", "08720": "Mohammad Khalid", 
+            "08745": "Aseel Mohammed Issa Al-Sulayhim", "08764": "Hani Rashid Raja Rashidi", 
+            "08473": "Eslam Ahmed Abozeid Aly", "08538": "Ahmed Hamdy Rashad Fouda", 
+            "08775": "Mohammed Adel Mohammed Al-Jabrin", "08776": "Fares Eid Nami Al-Baqmi", 
+            "08785": "Fahd bin Mutab bin Mohammed Al-Otaibi", "08788": "Abdul Mohsen bin Abdul Rahman", 
+            "08807": "Fahd Hamoud Awad Al-Rashidi", "08814": "Nasser Shaya Jarallah Al-Shaya", "08816": "Mohamad Awais", 
+            "08838": "Mohamed Ahmed Youssef Helal", "50000": "Mohamed Farthoon", "50001": "Mohamed Raslath", 
+            "50002": "Mohamed Akram", "50003": "Mohamed Fazaan", "50004": "Mohamed Nawas", "50005": "Mohamed Fazlul", 
+            "50006": "Syed Faizan", "50007": "Ahmed Shukry Mohamed", "08382": "Sagar Dulal", "08027": "Mohamed Irfan", 
+            "07793": "Mohamed Miraj", "07926": "Ramesh Kumar", "02818": "Abdul Razzak", "02338": "Samiullah Hussein", 
+            "03079": "Salamuddin Ansari", "08536": "Mohtab Mola", "08548": "Mohammed Yamin", "07761": "Ahmed Sami", 
+            "07222": "Mohammed Naqib", "00358": "Abdul Qayyum", "07519": "Zohaib Zafar", "02240": "Mohamed Azimuddin", 
+            "03935": "Md Shimol", "01488": "Turki Abdulaziz Abdullah bin Marhum", "02832": "Murad Ali Rostam Ali", 
+            "08396": "Fukrul Islam", "00435": "Hany Eid"
+        };
+        
+        // 3. Elements
+        const stockListContainer = document.getElementById('stockList');
+        const locationFilterSelect = document.getElementById('locationFilter');
+        const technicianInfoDiv = document.getElementById('technicianInfo');
+
+        // 4. Populate Location Filter
+        const uniqueLocations = [...new Set(rawStockData.map(item => item.Location))].sort();
+        uniqueLocations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            locationFilterSelect.appendChild(option);
+        });
+
+        // 5. Rendering Function (Mobile Cards)
+        function renderStock(data) {
+            stockListContainer.innerHTML = ''; 
+
+            if (data.length === 0) {
+                stockListContainer.innerHTML = '<div class="empty-state">No stock items found for the selected location.</div>';
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.classList.add('stock-card');
+
+                // Using saved information: الإجمالي is Total.
+                const translate = (text) => text === 'الإجمالي' ? 'Total' : text;
+
+                card.innerHTML = `
+                    <div class="card-title">${item["Product name"]}</div>
+                    <div class="card-location-info"><strong>Item:</strong> ${item["Item number"]} | <strong>Location:</strong> ${item.Location}</div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <strong>Physical Inv.</strong>
+                            <span>${item["Physical inventory"].toFixed(2)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Avail. Physical</strong>
+                            <span>${item["Available physical"].toFixed(2)}</span>
+                        </div>
+                        <div class="detail-item total">
+                            <strong>${translate("الإجمالي")}</strong>
+                            <span>${item["Total available"].toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                stockListContainer.appendChild(card);
+            });
+        }
+
+        // 6. Filtering and Lookup Logic
+        function getTechnicianInfo(selectedLocation) {
+            let technicianName = "No specific technician assigned or location not selected.";
+            let technicianCode = selectedLocation || 'N/A';
+
+            if (selectedLocation) {
+                // *** Technician Lookup: Use Location Code as Employee Code ***
+                const employeeCode = selectedLocation.length === 5 && !isNaN(selectedLocation) 
+                                     ? selectedLocation.padStart(5, '0') 
+                                     : selectedLocation;
+                
+                technicianCode = employeeCode;
+                technicianName = employeeCodeMap[employeeCode] || `Technician Not Found`;
+                
+                // Special handling for the main warehouse locations (Z-codes)
+                if (selectedLocation === 'Z11049') {
+                    technicianName = 'Main Warehouse Stock';
+                } else if (selectedLocation === 'Z11177') {
+                    technicianName = employeeCodeMap['Z11177'] || 'Main Warehouse Stock (Z11177)';
+                }
+            } 
+            return { name: technicianName, code: technicianCode };
+        }
+
+        function filterAndLookup() {
+            const selectedLocation = locationFilterSelect.value;
+            let filteredData = rawStockData;
+            
+            if (selectedLocation) {
+                filteredData = rawStockData.filter(item => item.Location === selectedLocation);
+            }
+
+            const techInfo = getTechnicianInfo(selectedLocation);
+            
+            // Update UI
+            technicianInfoDiv.textContent = `Technician: ${techInfo.name} (${techInfo.code})`;
+            renderStock(filteredData);
+        }
+
+        // 7. PDF Export Function (Incorporating the requested function logic)
+        function exportToPdf() {
+            try {
+                const selectedLocation = locationFilterSelect.value;
+                const filteredData = selectedLocation ? rawStockData.filter(item => item.Location === selectedLocation) : rawStockData;
+                const techInfo = getTechnicianInfo(selectedLocation);
+                
+                if (filteredData.length === 0) {
+                    alert('No data to export!');
+                    return;
+                }
+
+                // Prepare Data for autoTable
+                const headerText = "Stock for Technician Report";
+                const tableHeaders = ["Item number", "Product name", "Warehouse", "Location", "Physical Inv.", "Available Physical", "Total Available"];
+                
+                const tableBody = filteredData.map(item => [
+                    item["Item number"],
+                    item["Product name"],
+                    item.Warehouse,
+                    item.Location,
+                    item["Physical inventory"].toFixed(2),
+                    item["Available physical"].toFixed(2),
+                    item["Total available"].toFixed(2)
+                ]);
+
+                const doc = new window.jspdf.jsPDF({ orientation: 'landscape' });
+
+                // Header
+                doc.setFontSize(16);
+                doc.setTextColor(45, 84, 94); // #2d545e
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const textWidth = doc.getTextWidth(headerText);
+                const centerX = (pageWidth - textWidth) / 2;
+                doc.text(headerText, centerX, 15);
+
+                // Set a bottom margin to reserve space for the footer
+                const bottomMargin = 30;
+
+                doc.autoTable({
+                    head: [tableHeaders],
+                    body: tableBody,
+                    startY: 25,
+                    margin: { left: 10, right: 10, top: 25, bottom: bottomMargin },
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 2
+                    },
+                    headStyles: {
+                        fillColor: [26, 42, 108], // #1a2a6c
+                        textColor: [255, 255, 255],
+                        halign: 'center'
+                    },
+                    bodyStyles: {
+                        halign: 'left'
+                    },
+                    // Align numerical columns to the right
+                    didParseCell: function (data) {
+                        if (data.section === 'body' && data.column.index >= 4) {
+                            data.cell.styles.halign = 'right';
+                        }
+                    }
+                });
+
+                // Draw the footer after the table, at the reserved bottom margin
+                const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+                const footerY = pageHeight - 15;
+                
+                doc.setFontSize(10);
+                doc.setTextColor(51, 54, 59); // #33363b
+                
+                // Dynamic Footer Text
+                doc.text(`Technician Name: ${techInfo.name}`, 10, footerY - 5);
+                doc.text(`Location Code: ${techInfo.code}, RIYADH`, 10, footerY);
+
+                doc.save('stock-for-technician.pdf');
+
+            } catch (err) {
+                alert("Error exporting PDF: " + err.message);
+                console.error("PDF export error:", err);
+            }
+        }
+
+        // Attach event listeners
+        document.getElementById('filterLocationBtn').addEventListener('click', filterAndLookup);
+        locationFilterSelect.addEventListener('change', filterAndLookup);
+        document.getElementById('exportPdfBtn').addEventListener('click', exportToPdf); // Attach PDF function
+
+        // Initial state
+        filterAndLookup(); 
+    </script>
+</body>
+</html>
